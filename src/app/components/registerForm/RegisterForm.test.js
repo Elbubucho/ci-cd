@@ -1,0 +1,221 @@
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import RegisterForm from './RegisterForm';
+
+const labels = {
+    firstname: /first name/i,
+    name: /^name$/i,
+    email: /email/i,
+    birth: /birth/i,
+    postcode: /postcode/i,
+    city: /city/i,
+};
+
+const validValues = {
+    firstname: 'Jean',
+    name: 'Dupont',
+    email: 'jean@example.com',
+    birth: '1998-01-22',
+    postcode: '75001',
+    city: 'Paris',
+};
+
+function getInput(key) {
+    return screen.getByLabelText(labels[key]);
+}
+
+function fillField(key, value) {
+    fireEvent.change(getInput(key), { target: { value } });
+}
+
+function fillAllValid() {
+    Object.keys(labels).forEach((k) => fillField(k, validValues[k]));
+}
+
+describe('RegisterForm integration tests', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+        act(() => { jest.runOnlyPendingTimers(); });
+        jest.useRealTimers();
+    });
+
+    it('renders all fields and the submit button', () => {
+        render(<RegisterForm />);
+        Object.keys(labels).forEach((k) => {
+            expect(getInput(k)).toBeInTheDocument();
+        });
+        expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
+    });
+
+    it('associates each label with its input via id/htmlFor', () => {
+        render(<RegisterForm />);
+        Object.keys(labels).forEach((k) => {
+            expect(getInput(k)).toHaveAttribute('id', k);
+        });
+    });
+
+    it('submit button is disabled when fields are empty', () => {
+        render(<RegisterForm />);
+        expect(screen.getByRole('button', { name: /send/i })).toBeDisabled();
+    });
+
+    it('submit button is disabled when only some fields are filled', () => {
+        render(<RegisterForm />);
+        fillField('firstname', 'Jean');
+        fillField('name', 'Dupont');
+        expect(screen.getByRole('button', { name: /send/i })).toBeDisabled();
+    });
+
+    it('shows an error for an invalid firstname', () => {
+        render(<RegisterForm />);
+        fillField('firstname', 'Jean123');
+        const err = screen.getByText(/invalid firstname/i);
+        expect(err).toBeInTheDocument();
+        expect(err).toHaveStyle({ color: 'red' });
+    });
+
+    it('shows an error for an invalid name', () => {
+        render(<RegisterForm />);
+        fillField('name', 'Dup@nt');
+        expect(screen.getByText(/invalid name/i)).toBeInTheDocument();
+    });
+
+    it('shows an error for an invalid email', () => {
+        render(<RegisterForm />);
+        fillField('email', 'not-an-email');
+        expect(screen.getByText(/invalid email/i)).toBeInTheDocument();
+    });
+
+    it('shows an error for an invalid postcode', () => {
+        render(<RegisterForm />);
+        fillField('postcode', '12');
+        expect(screen.getByText(/invalid postcode/i)).toBeInTheDocument();
+    });
+
+    it('shows an error for an invalid city', () => {
+        render(<RegisterForm />);
+        fillField('city', 'Paris99');
+        expect(screen.getByText(/invalid city/i)).toBeInTheDocument();
+    });
+
+    it('shows an error when user is under 18', () => {
+        render(<RegisterForm />);
+        const recent = new Date();
+        recent.setFullYear(recent.getFullYear() - 10);
+        fillField('birth', recent.toISOString().split('T')[0]);
+        expect(screen.getByText(/too young/i)).toBeInTheDocument();
+    });
+
+    it('does not show errors when all fields are valid', () => {
+        render(<RegisterForm />);
+        fillAllValid();
+        expect(screen.queryByText(/invalid/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/too young/i)).not.toBeInTheDocument();
+    });
+
+    it('enables submit button when all fields are valid', () => {
+        render(<RegisterForm />);
+        fillAllValid();
+        expect(screen.getByRole('button', { name: /send/i })).toBeEnabled();
+    });
+
+    it('saves the user in localStorage on submit', () => {
+        render(<RegisterForm />);
+        fillAllValid();
+        fireEvent.click(screen.getByRole('button', { name: /send/i }));
+        const stored = JSON.parse(localStorage.getItem('users'));
+        expect(stored).toHaveLength(1);
+        expect(stored[0]).toEqual({
+            FirstName: 'Jean',
+            Name: 'Dupont',
+            Email: 'jean@example.com',
+            Birth: '1998-01-22',
+            Postcode: '75001',
+            City: 'Paris',
+        });
+    });
+
+    it('appends to an existing users list in localStorage', () => {
+        localStorage.setItem('users', JSON.stringify([{ FirstName: 'Old' }]));
+        render(<RegisterForm />);
+        fillAllValid();
+        fireEvent.click(screen.getByRole('button', { name: /send/i }));
+        const stored = JSON.parse(localStorage.getItem('users'));
+        expect(stored).toHaveLength(2);
+    });
+
+    it('shows the success toaster on submit', () => {
+        render(<RegisterForm />);
+        fillAllValid();
+        fireEvent.click(screen.getByRole('button', { name: /send/i }));
+        const toast = screen.getByTestId('toast');
+        expect(toast).toBeInTheDocument();
+        expect(toast).toHaveTextContent(/saved successfully/i);
+        expect(toast).toHaveAttribute('role', 'alert');
+    });
+
+    it('hides the toaster after 3 seconds', () => {
+        render(<RegisterForm />);
+        fillAllValid();
+        fireEvent.click(screen.getByRole('button', { name: /send/i }));
+        expect(screen.getByTestId('toast')).toBeInTheDocument();
+        act(() => { jest.advanceTimersByTime(3000); });
+        expect(screen.queryByTestId('toast')).not.toBeInTheDocument();
+    });
+
+    it('does not show the users list before clicking the show button', () => {
+        render(<RegisterForm />);
+        expect(screen.queryByTestId('users-list')).not.toBeInTheDocument();
+    });
+
+    it('shows "No registered users" when localStorage is empty', () => {
+        render(<RegisterForm />);
+        fireEvent.click(screen.getByRole('button', { name: /show registered users/i }));
+        expect(screen.getByTestId('users-list')).toBeInTheDocument();
+        expect(screen.getByText(/no registered users/i)).toBeInTheDocument();
+    });
+
+    it('displays registered users from localStorage on click', () => {
+        localStorage.setItem('users', JSON.stringify([
+            { FirstName: 'Jean', Name: 'Dupont', Email: 'jean@example.com', Birth: '1998-01-22', Postcode: '75001', City: 'Paris' },
+            { FirstName: 'Marie', Name: 'Curie', Email: 'marie@example.com', Birth: '1990-05-10', Postcode: '69001', City: 'Lyon' },
+        ]));
+        render(<RegisterForm />);
+        fireEvent.click(screen.getByRole('button', { name: /show registered users/i }));
+        expect(screen.getByText(/Jean/)).toBeInTheDocument();
+        expect(screen.getByText(/Dupont/)).toBeInTheDocument();
+        expect(screen.getByText(/jean@example\.com/)).toBeInTheDocument();
+        expect(screen.getByText(/Marie/)).toBeInTheDocument();
+        expect(screen.getByText(/Lyon/)).toBeInTheDocument();
+    });
+
+    it('toggles the users list off when clicking show again', () => {
+        render(<RegisterForm />);
+        const showBtn = screen.getByRole('button', { name: /show registered users/i });
+        fireEvent.click(showBtn);
+        expect(screen.getByTestId('users-list')).toBeInTheDocument();
+        fireEvent.click(showBtn);
+        expect(screen.queryByTestId('users-list')).not.toBeInTheDocument();
+    });
+
+    it('shows the newly registered user in the list after submit', () => {
+        render(<RegisterForm />);
+        fillAllValid();
+        fireEvent.click(screen.getByRole('button', { name: /send/i }));
+        fireEvent.click(screen.getByRole('button', { name: /show registered users/i }));
+        expect(screen.getByText(/Jean/)).toBeInTheDocument();
+        expect(screen.getByText(/Paris/)).toBeInTheDocument();
+    });
+
+    it('clears all fields after a successful submit', () => {
+        render(<RegisterForm />);
+        fillAllValid();
+        fireEvent.click(screen.getByRole('button', { name: /send/i }));
+        Object.keys(labels).forEach((k) => {
+            expect(getInput(k)).toHaveValue('');
+        });
+    });
+});
