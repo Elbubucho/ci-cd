@@ -20,11 +20,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: npm ci, build and test
+      - name: npm ci,test, generate doc and build
         run: |
           npm ci
-          npm run build --if-present
           npm test
+          npm run jsdoc
+          npm run build --if-present
+          
           
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
