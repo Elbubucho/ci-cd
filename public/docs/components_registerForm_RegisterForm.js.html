@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: components/registerForm/RegisterForm.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: components/registerForm/RegisterForm.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import {useState} from "react";
+import  "../../utils/module";
+import {isAdult, isValidCodePost, isValidEmail, isValidName} from "../../utils/module";
+
+/**
+ * Formulaire d'inscription utilisateur.
+ *
+ * Champs : prénom, nom, email, date de naissance, code postal, ville.
+ * - Affiche un message d'erreur en rouge sous chaque champ invalide.
+ * - Le bouton "Send" est désactivé tant que les champs ne sont pas tous valides.
+ * - À la soumission : enregistre l'utilisateur dans `localStorage` (clé `users`),
+ *   affiche un toaster de succès et vide le formulaire.
+ *
+ * Règles de validation (voir `utils/module.js`) :
+ * - prénom, nom, ville : lettres, accents, trémas, tirets, apostrophes, espaces.
+ * - email : format `local@domaine.ext`.
+ * - code postal : 5 chiffres (format français).
+ * - date de naissance : majorité requise (>= 18 ans).
+ *
+ * @component
+ * @returns {JSX.Element} Le formulaire d'inscription.
+ */
+export default function RegisterForm() {
+
+    const [firstname, setFirstname] = useState("")
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [birth, setBirth] = useState("");
+    const [postcode, setPostcode] = useState("");
+    const [city, setCity] = useState("");
+
+    const [showData, setShowData] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [toast, setToast] = useState("");
+
+    function toggleGetData() {
+        if (showData) {
+            setShowData(false);
+            return;
+        }
+        const list = JSON.parse(localStorage.getItem("users")) || [];
+        setUsers(list);
+        setShowData(true);
+    }
+
+    const firstnameError = firstname &amp;&amp; !isValidName(firstname) ? "Invalid firstname" : "";
+    const nameError = name &amp;&amp; !isValidName(name) ? "Invalid name" : "";
+    const emailError = email &amp;&amp; !isValidEmail(email) ? "Invalid email" : "";
+    const postCodeError = postcode &amp;&amp; !isValidCodePost(postcode) ? "Invalid postcode" : "";
+    const cityError = city &amp;&amp; !isValidName(city) ? "Invalid city" : "";
+    const birthError = birth &amp;&amp; !isAdult(new Date(birth)) ? "You are too young" : "";
+
+    const isFormValid =
+        firstname &amp;&amp; name &amp;&amp; email &amp;&amp; birth &amp;&amp; postcode &amp;&amp; city &amp;&amp;
+        isValidName(firstname) &amp;&amp; isValidName(name) &amp;&amp; isValidName(city) &amp;&amp;
+        isValidEmail(email) &amp;&amp; isValidCodePost(postcode) &amp;&amp;
+        isAdult(new Date(birth));
+
+    function handleSubmission() {
+        let userData = {
+            FirstName: firstname,
+            Name: name,
+            Email: email,
+            Birth: birth,
+            Postcode: postcode,
+            City: city,
+        };
+        const list = JSON.parse(localStorage.getItem('users')) || [];
+        list.push(userData);
+        localStorage.setItem('users', JSON.stringify(list));
+        setToast("Saved Successfully");
+        setTimeout(() => setToast(""), 3000);
+        setFirstname("");
+        setName("");
+        setEmail("");
+        setBirth("");
+        setPostcode("");
+        setCity("");
+    }
+
+    return(
+        &lt;div>
+            &lt;label htmlFor="firstname">First Name &lt;/label>
+            &lt;input
+                id="firstname"
+                type="text"
+                name="first name"
+                placeholder="Type your first name"
+                onChange={(e) => setFirstname(e.target.value)}
+                value={firstname}
+            />
+            {firstnameError &amp;&amp; &lt;span style={{color: 'red'}}>{firstnameError}&lt;/span>}
+
+            &lt;label htmlFor="name"> Name &lt;/label>
+            &lt;input
+                id="name"
+                type="text"
+                name="name"
+                placeholder="Type your name"
+                onChange={(e) => setName(e.target.value)}
+                value={name}
+            />
+            {nameError &amp;&amp; &lt;span style={{color: 'red'}}>{nameError}&lt;/span>}
+
+            &lt;label htmlFor="email"> Email &lt;/label>
+            &lt;input
+                id="email"
+                type="email"
+                name="email"
+                placeholder="Type your email"
+                onChange={(e) => setEmail(e.target.value)}
+                value={email}
+            />
+            {emailError &amp;&amp; &lt;span style={{color: 'red'}}>{emailError}&lt;/span>}
+
+            &lt;label htmlFor="birth"> birth &lt;/label>
+            &lt;input
+                id="birth"
+                type="date"
+                name="birth"
+                placeholder="Type your birth"
+                onChange={(e) => setBirth(e.target.value)}
+                value={birth}
+            />
+            {birthError &amp;&amp; &lt;span style={{color: 'red'}}>{birthError}&lt;/span>}
+
+            &lt;label htmlFor="postcode"> postcode &lt;/label>
+            &lt;input
+                id="postcode"
+                type="text"
+                name="postcode"
+                placeholder="Type your postcode"
+                onChange={(e) => setPostcode(e.target.value)}
+                value={postcode}/>
+            {postCodeError &amp;&amp; &lt;span style={{color: 'red'}}>{postCodeError}&lt;/span>}
+
+            &lt;label htmlFor="city"> city &lt;/label>
+            &lt;input
+                id="city"
+                type="text"
+                name="city"
+                placeholder="Type your city"
+                onChange={(e) => setCity(e.target.value)}
+                value={city}/>
+            {cityError &amp;&amp; &lt;span style={{color: 'red'}}>{cityError}&lt;/span>}
+
+            &lt;button onClick={handleSubmission} disabled={!isFormValid}>Send&lt;/button>
+
+            &lt;button onClick={toggleGetData}>Show registered users&lt;/button>
+
+            {toast &amp;&amp; (
+                &lt;div
+                    role="alert"
+                    data-testid="toast"
+                    style={{
+                        position: 'fixed',
+                        bottom: 20,
+                        right: 20,
+                        background: '#16a34a',
+                        color: 'white',
+                        padding: '10px 16px',
+                        borderRadius: 4,
+                    }}
+                >
+                    {toast}
+                &lt;/div>
+            )}
+
+            {showData &amp;&amp; (
+                &lt;div className="data" data-testid="users-list">
+                    {users.length === 0 ? (
+                        &lt;div>No registered users&lt;/div>
+                    ) : (
+                        users.map((u, i) => (
+                            &lt;div key={i} className="user-item">
+                                &lt;div>First Name - {u.FirstName}&lt;/div>
+                                &lt;div>Name - {u.Name}&lt;/div>
+                                &lt;div>Email - {u.Email}&lt;/div>
+                                &lt;div>Birth - {u.Birth}&lt;/div>
+                                &lt;div>Postcode - {u.Postcode}&lt;/div>
+                                &lt;div>City - {u.City}&lt;/div>
+                            &lt;/div>
+                        ))
+                    )}
+                &lt;/div>
+            )}
+        &lt;/div>)
+
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#calculateAge">calculateAge</a></li><li><a href="global.html#isAdult">isAdult</a></li><li><a href="global.html#isValidCodePost">isValidCodePost</a></li><li><a href="global.html#isValidEmail">isValidEmail</a></li><li><a href="global.html#isValidName">isValidName</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu May 07 2026 12:06:36 GMT+0200 (heure d’été d’Europe centrale)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
