@@ -13,6 +13,8 @@
 
 /public/docs
 
+dist/
+
 # misc
 .DS_Store
 .env.local
