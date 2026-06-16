@@ -97,13 +97,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create .env
-        run: |
-          echo "MYSQL_ROOT_PASSWORD=root" >> .env
-          echo "MYSQL_USER=user" >> .env
-          echo "MYSQL_DATABASE=ynov_ci" >> .env
-
       - name: Start services
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
         run: docker compose up -d --build
 
       - name: List containers
@@ -113,13 +111,13 @@ jobs:
         run: sleep 60
 
       - name: Check db health
-        run: docker inspect --format "{{json .State.Health.Status }}" integration-test-db-1 | jq '. == "healthy"'
+        run: docker inspect --format "{{json .State.Health.Status }}" ci-cd-db-1 | jq '. == "healthy"'
 
       - name: Check backend health
-        run: docker inspect --format "{{json .State.Health.Status }}" integration-test-backend-1 | jq '. == "healthy"'
+        run: docker inspect --format "{{json .State.Health.Status }}" ci-cd-backend-1 | jq '. == "healthy"'
 
       - name: Check adminer health
-        run: docker inspect --format "{{json .State.Health.Status }}" integration-test-adminer-1 | jq '. == "healthy"'
+        run: docker inspect --format "{{json .State.Health.Status }}" ci-cd-adminer-1 | jq '. == "healthy"'
 
       - name: Stop services
         if: always()
