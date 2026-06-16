@@ -105,15 +105,7 @@ jobs:
         run: docker compose up -d --build
 
       - name: List containers
-        run: docker ps -a
-
-      - name: Debug db logs
-        if: always()
-        run: |
-          echo "=== MYSQL LOGS ==="
-          docker logs ci-cd-db-1 || true
-          echo "=== BACKEND LOGS ==="
-          docker logs ci-cd-backend-1 || true
+        run: docker ps
 
       - name: Wait for services to be healthy
         run: sleep 60
