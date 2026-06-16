@@ -1,0 +1,63 @@
+services:
+  db:
+    image: elbubucho/ci-cd-mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    volumes:
+      - ./sqlfiles:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: "mysql --user=$$MYSQL_USER --password=$$MYSQL_ROOT_PASSWORD --execute \"USE $$MYSQL_DATABASE; SELECT COUNT(*) FROM users;\" || exit 1"
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: "curl -f http://localhost:8080"
+      start_period: 1m
+      start_interval: 10s
+  backend:
+    command: uvicorn main:app --proxy-headers --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_HOST=db
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl -f http://localhost:8000/users || exit 1"
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+  react:
+    image: react
+    build:
+      context: .
+      dockerfile: DockerfileReact
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_SERVER_PORT=8000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm start
