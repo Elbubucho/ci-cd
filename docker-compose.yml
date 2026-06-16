@@ -4,12 +4,11 @@ services:
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_USER=${MYSQL_USER}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
     volumes:
       - ./sqlfiles:/docker-entrypoint-initdb.d
     healthcheck:
-      test: "mysql --user=$$MYSQL_USER --password=$$MYSQL_ROOT_PASSWORD --execute \"USE $$MYSQL_DATABASE; SELECT COUNT(*) FROM users;\" || exit 1"
+      test: "mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --execute \"USE $$MYSQL_DATABASE; SELECT COUNT(*) FROM users;\" || exit 1"
       interval: 10s
       timeout: 10s
       retries: 5
