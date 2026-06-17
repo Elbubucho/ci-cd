@@ -39,6 +39,17 @@ describe('calculateAge Unit Test Suites', () => {
         }
         expect(calculateAge(p)).toBeNaN()
     })
+
+    it('should return NaN for an aberrant date like 01/01/0001', () => {
+        const p = {
+            birth: new Date("0001-01-01")
+        }
+        expect(calculateAge(p)).toBeNaN()
+    })
+
+    it('isAdult should return false for an aberrant date like 01/01/0001', () => {
+        expect(isAdult(new Date("0001-01-01"))).toBe(false)
+    })
 })
 
 /**

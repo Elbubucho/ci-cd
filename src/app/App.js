@@ -4,6 +4,16 @@ import RegisterForm from "./components/registerForm/RegisterForm";
 import {useState, useEffect} from "react";
 
 
+/**
+ * Composant racine de l'application "Users manager".
+ *
+ * Au montage, interroge l'API backend (`GET /users`) pour compter
+ * les utilisateurs enregistrés et affiche le total. Rend également
+ * le composant {@link RegisterForm} permettant l'inscription.
+ *
+ * @component
+ * @returns {JSX.Element} La page principale de l'application.
+ */
 function App() {
     const port = process.env.REACT_APP_SERVER_PORT;
     let [usersCount, setUsersCount] = useState(0);

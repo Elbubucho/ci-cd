@@ -1,14 +1,21 @@
 /**
+ * @file Fonctions utilitaires de validation (nom, email, code postal, date) et de calcul d'âge.
+ * @module utils/module
+ */
+
+/**
  * Calcule l'âge en années d'une personne à partir de sa date de naissance.
+ * Retourne NaN si la date est invalide ou aberrante (antérieure à 1900).
  *
  * @param {{birth: Date}} p Objet représentant une personne, avec un champ `birth` de type Date.
- * @returns {number} L'âge en années (NaN si la date est invalide).
+ * @returns {number} L'âge en années, ou NaN si la date est invalide / antérieure à 1900.
  * @throws {Error} "missing param p" si `p` est undefined.
  * @throws {Error} "wrong format" si `p` n'est pas un objet.
  * @throws {Error} "no birth field" si `p.birth` est manquant ou n'est pas une Date.
  *
  * @example
  * calculateAge({ birth: new Date("1998-01-22") }); // 28
+ * calculateAge({ birth: new Date("0001-01-01") }); // NaN
  */
 export function calculateAge(p) {
     if (p === undefined) {
@@ -21,6 +28,9 @@ export function calculateAge(p) {
         throw new Error('no birth field')
     }
     if (isNaN(p.birth)) {
+        return NaN
+    }
+    if (p.birth.getUTCFullYear() < 1900) {
         return NaN
     }
     let dateDiff = new Date(Date.now() - p.birth.getTime())
