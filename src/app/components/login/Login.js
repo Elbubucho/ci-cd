@@ -12,7 +12,8 @@ const API_URL = `http://localhost:${API_PORT}`;
  * est admin.
  *
  * @component
- * @param {{ onLogin: (isAdmin: boolean) => void }} props
+ * @param {Object} props
+ * @param {Function} props.onLogin Callback appelé avec `true` quand le login admin réussit.
  * @returns {JSX.Element}
  */
 export default function Login({ onLogin }) {
