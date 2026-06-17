@@ -25,8 +25,8 @@ export default function Login({ onLogin }) {
         e.preventDefault();
         setError("");
         try {
-            const res = await axios.post(`${API_URL}/login`, { email, password });
-            if (res.data && res.data.is_admin) {
+            const response = await axios.post(`${API_URL}/login`, { email, password });
+            if (response.data && response.data.is_admin) {
                 onLogin(true);
             }
         } catch (err) {
