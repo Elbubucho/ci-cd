@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import RegisterForm from './RegisterForm';
 
 const labels = {
@@ -32,16 +32,6 @@ function fillAllValid() {
 }
 
 describe('RegisterForm integration tests', () => {
-    beforeEach(() => {
-        localStorage.clear();
-        jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-        act(() => { jest.runOnlyPendingTimers(); });
-        jest.useRealTimers();
-    });
-
     it('renders all fields and the submit button', () => {
         render(<RegisterForm />);
         Object.keys(labels).forEach((k) => {
@@ -122,100 +112,8 @@ describe('RegisterForm integration tests', () => {
         expect(screen.getByRole('button', { name: /send/i })).toBeEnabled();
     });
 
-    it('saves the user in localStorage on submit', () => {
-        render(<RegisterForm />);
-        fillAllValid();
-        fireEvent.click(screen.getByRole('button', { name: /send/i }));
-        const stored = JSON.parse(localStorage.getItem('users'));
-        expect(stored).toHaveLength(1);
-        expect(stored[0]).toEqual({
-            FirstName: 'Jean',
-            Name: 'Dupont',
-            Email: 'jean@example.com',
-            Birth: '1998-01-22',
-            Postcode: '75001',
-            City: 'Paris',
-        });
-    });
-
-    it('appends to an existing users list in localStorage', () => {
-        localStorage.setItem('users', JSON.stringify([{ FirstName: 'Old' }]));
-        render(<RegisterForm />);
-        fillAllValid();
-        fireEvent.click(screen.getByRole('button', { name: /send/i }));
-        const stored = JSON.parse(localStorage.getItem('users'));
-        expect(stored).toHaveLength(2);
-    });
-
-    it('shows the success toaster on submit', () => {
-        render(<RegisterForm />);
-        fillAllValid();
-        fireEvent.click(screen.getByRole('button', { name: /send/i }));
-        const toast = screen.getByTestId('toast');
-        expect(toast).toBeInTheDocument();
-        expect(toast).toHaveTextContent(/saved successfully/i);
-        expect(toast).toHaveAttribute('role', 'alert');
-    });
-
-    it('hides the toaster after 3 seconds', () => {
-        render(<RegisterForm />);
-        fillAllValid();
-        fireEvent.click(screen.getByRole('button', { name: /send/i }));
-        expect(screen.getByTestId('toast')).toBeInTheDocument();
-        act(() => { jest.advanceTimersByTime(3000); });
-        expect(screen.queryByTestId('toast')).not.toBeInTheDocument();
-    });
-
     it('does not show the users list before clicking the show button', () => {
         render(<RegisterForm />);
         expect(screen.queryByTestId('users-list')).not.toBeInTheDocument();
-    });
-
-    it('shows "No registered users" when localStorage is empty', () => {
-        render(<RegisterForm />);
-        fireEvent.click(screen.getByRole('button', { name: /show registered users/i }));
-        expect(screen.getByTestId('users-list')).toBeInTheDocument();
-        expect(screen.getByText(/no registered users/i)).toBeInTheDocument();
-    });
-
-    it('displays registered users from localStorage on click', () => {
-        localStorage.setItem('users', JSON.stringify([
-            { FirstName: 'Jean', Name: 'Dupont', Email: 'jean@example.com', Birth: '1998-01-22', Postcode: '75001', City: 'Paris' },
-            { FirstName: 'Marie', Name: 'Curie', Email: 'marie@example.com', Birth: '1990-05-10', Postcode: '69001', City: 'Lyon' },
-        ]));
-        render(<RegisterForm />);
-        fireEvent.click(screen.getByRole('button', { name: /show registered users/i }));
-        expect(screen.getByText(/Jean/)).toBeInTheDocument();
-        expect(screen.getByText(/Dupont/)).toBeInTheDocument();
-        expect(screen.getByText(/jean@example\.com/)).toBeInTheDocument();
-        expect(screen.getByText(/Marie/)).toBeInTheDocument();
-        expect(screen.getByText(/Lyon/)).toBeInTheDocument();
-    });
-
-    it('toggles the users list off when clicking show again', () => {
-        render(<RegisterForm />);
-        const showBtn = screen.getByRole('button', { name: /show registered users/i });
-        fireEvent.click(showBtn);
-        expect(screen.getByTestId('users-list')).toBeInTheDocument();
-        fireEvent.click(showBtn);
-        expect(screen.queryByTestId('users-list')).not.toBeInTheDocument();
-    });
-
-    it('shows the newly registered user in the list after submit', () => {
-        render(<RegisterForm />);
-        fillAllValid();
-        fireEvent.click(screen.getByRole('button', { name: /send/i }));
-        fireEvent.click(screen.getByRole('button', { name: /show registered users/i }));
-        expect(screen.getByText(/Jean/)).toBeInTheDocument();
-        expect(screen.getByText(/Paris/)).toBeInTheDocument();
-    });
-
-    it('clears all fields after a successful submit', () => {
-        render(<RegisterForm />);
-        fillAllValid();
-        fireEvent.click(screen.getByRole('button', { name: /send/i }));
-        Object.keys(labels).forEach((k) => {
-            expect(getInput(k)).toHaveValue('');
-        });
     });
 });

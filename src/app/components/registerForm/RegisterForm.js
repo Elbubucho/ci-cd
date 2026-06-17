@@ -199,15 +199,20 @@ export default function RegisterForm({ isAdmin = false } = {}) {
                         users.map((u) => (
                             <div key={u.id} className="user-item" data-testid={`user-${u.id}`}>
                                 <div>First Name - {u.first_name}</div>
-                                <div>Name - {u.name}</div>
-                                <div>City - {u.city}</div>
                                 {isAdmin && (
-                                    <button
-                                        data-testid={`delete-${u.id}`}
-                                        onClick={() => handleDelete(u.id)}
-                                    >
-                                        Delete
-                                    </button>
+                                    <>
+                                        <div>Name - {u.name}</div>
+                                        <div>Email - {u.email}</div>
+                                        <div>Birth - {u.birth}</div>
+                                        <div>Postcode - {u.postcode}</div>
+                                        <div>City - {u.city}</div>
+                                        <button
+                                            data-testid={`delete-${u.id}`}
+                                            onClick={() => handleDelete(u.id)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </>
                                 )}
                             </div>
                         ))
