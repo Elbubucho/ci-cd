@@ -1,6 +1,10 @@
 import {useState} from "react";
+import axios from "axios";
 import  "../../utils/module";
 import {isAdult, isValidCodePost, isValidEmail, isValidName} from "../../utils/module";
+
+const API_PORT = process.env.REACT_APP_SERVER_PORT || 8000;
+const API_URL = `http://localhost:${API_PORT}`;
 
 /**
  * Formulaire d'inscription utilisateur.
@@ -20,7 +24,7 @@ import {isAdult, isValidCodePost, isValidEmail, isValidName} from "../../utils/m
  * @component
  * @returns {JSX.Element} Le formulaire d'inscription.
  */
-export default function RegisterForm() {
+export default function RegisterForm({ isAdmin = false } = {}) {
 
     const [firstname, setFirstname] = useState("")
     const [name, setName] = useState("");
@@ -33,14 +37,23 @@ export default function RegisterForm() {
     const [users, setUsers] = useState([]);
     const [toast, setToast] = useState("");
 
-    function toggleGetData() {
+    async function toggleGetData() {
         if (showData) {
             setShowData(false);
             return;
         }
-        const list = JSON.parse(localStorage.getItem("users")) || [];
-        setUsers(list);
+        await loadUsers();
         setShowData(true);
+    }
+
+    async function handleDelete(id) {
+        try {
+            await axios.delete(`${API_URL}/users/${id}`);
+            await loadUsers();
+        } catch (err) {
+            setToast("Error deleting user");
+            setTimeout(() => setToast(""), 3000);
+        }
     }
 
     const firstnameError = firstname && !isValidName(firstname) ? "Invalid firstname" : "";
@@ -56,26 +69,38 @@ export default function RegisterForm() {
         isValidEmail(email) && isValidCodePost(postcode) &&
         isAdult(new Date(birth));
 
-    function handleSubmission() {
-        let userData = {
-            FirstName: firstname,
-            Name: name,
-            Email: email,
-            Birth: birth,
-            Postcode: postcode,
-            City: city,
+    async function handleSubmission() {
+        const userData = {
+            first_name: firstname,
+            name: name,
+            email: email,
+            birth: birth,
+            postcode: postcode,
+            city: city,
         };
-        const list = JSON.parse(localStorage.getItem('users')) || [];
-        list.push(userData);
-        localStorage.setItem('users', JSON.stringify(list));
-        setToast("Saved Successfully");
-        setTimeout(() => setToast(""), 3000);
-        setFirstname("");
-        setName("");
-        setEmail("");
-        setBirth("");
-        setPostcode("");
-        setCity("");
+        try {
+            await axios.post(`${API_URL}/user`, userData);
+            setToast("Saved Successfully");
+            setTimeout(() => setToast(""), 3000);
+            setFirstname("");
+            setName("");
+            setEmail("");
+            setBirth("");
+            setPostcode("");
+            setCity("");
+        } catch (err) {
+            setToast("Error saving user");
+            setTimeout(() => setToast(""), 3000);
+        }
+    }
+
+    async function loadUsers() {
+        try {
+            const res = await axios.get(`${API_URL}/users`);
+            setUsers(res.data.users || []);
+        } catch (err) {
+            setUsers([]);
+        }
     }
 
     return(
@@ -171,14 +196,19 @@ export default function RegisterForm() {
                     {users.length === 0 ? (
                         <div>No registered users</div>
                     ) : (
-                        users.map((u, i) => (
-                            <div key={i} className="user-item">
-                                <div>First Name - {u.FirstName}</div>
-                                <div>Name - {u.Name}</div>
-                                <div>Email - {u.Email}</div>
-                                <div>Birth - {u.Birth}</div>
-                                <div>Postcode - {u.Postcode}</div>
-                                <div>City - {u.City}</div>
+                        users.map((u) => (
+                            <div key={u.id} className="user-item" data-testid={`user-${u.id}`}>
+                                <div>First Name - {u.first_name}</div>
+                                <div>Name - {u.name}</div>
+                                <div>City - {u.city}</div>
+                                {isAdmin && (
+                                    <button
+                                        data-testid={`delete-${u.id}`}
+                                        onClick={() => handleDelete(u.id)}
+                                    >
+                                        Delete
+                                    </button>
+                                )}
                             </div>
                         ))
                     )}
