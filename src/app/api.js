@@ -1,7 +1,8 @@
 import axios from "axios";
 
-const API_PORT = process.env.REACT_APP_SERVER_PORT;
-const API_URL = `http://localhost:${API_PORT}`;
+const API_URL = process.env.NODE_ENV === "production"
+    ? "https://ci-cd-integration-psi.vercel.app"
+    : `http://localhost:${process.env.REACT_APP_SERVER_PORT}`;
 
 /**
  * @file Wrappers axios autour des endpoints du backend FastAPI.
