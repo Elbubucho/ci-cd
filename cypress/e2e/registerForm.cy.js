@@ -27,12 +27,6 @@ function fillValidForm(overrides = {}) {
 }
 
 describe("RegisterForm E2E (online)", () => {
-  before(() => {
-    if (Cypress.env("offline")) {
-      this.skip && this.skip();
-    }
-  });
-
   beforeEach(function () {
     if (Cypress.env("offline")) this.skip();
     resetUsers();
