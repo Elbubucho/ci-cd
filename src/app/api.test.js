@@ -107,4 +107,24 @@ describe("api module", () => {
             expect(result).toBe(false);
         });
     });
+
+    describe("API URL selection by NODE_ENV", () => {
+        const originalEnv = process.env.NODE_ENV;
+
+        afterEach(() => {
+            process.env.NODE_ENV = originalEnv;
+            jest.resetModules();
+        });
+
+        it("uses the Vercel URL when NODE_ENV is production", async () => {
+            process.env.NODE_ENV = "production";
+            jest.resetModules();
+            jest.doMock("axios");
+            const axiosProd = require("axios");
+            axiosProd.get.mockResolvedValueOnce({ data: { users: [] } });
+            const { getUsers: getUsersProd } = require("./api");
+            await getUsersProd();
+            expect(axiosProd.get).toHaveBeenCalledWith("https://ci-cd-integration-psi.vercel.app/users");
+        });
+    });
 });
