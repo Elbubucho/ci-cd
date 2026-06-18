@@ -1,6 +1,0 @@
-Repository GitHub : https://github.com/Elbubucho/ci-cd
-Frontend (GitHub Pages) : https://Elbubucho.github.io/ci-cd/
-Backend (Vercel) : https://ci-cd-integration-psi.vercel.app
-Image Docker frontend : https://hub.docker.com/r/elbubucho/frontend
-Image Docker backend : https://hub.docker.com/r/elbubucho/backend
-Codecov : https://app.codecov.io/gh/Elbubucho/ci-cd
