@@ -1,10 +1,7 @@
 import {useState} from "react";
-import axios from "axios";
+import {createUser, deleteUser, getUsers} from "../../api";
 import  "../../utils/module";
 import {isAdult, isValidCodePost, isValidEmail, isValidName} from "../../utils/module";
-
-const API_PORT = process.env.REACT_APP_SERVER_PORT || 8000;
-const API_URL = `http://localhost:${API_PORT}`;
 
 /**
  * Formulaire d'inscription utilisateur.
@@ -24,7 +21,7 @@ const API_URL = `http://localhost:${API_PORT}`;
  * @component
  * @returns {JSX.Element} Le formulaire d'inscription.
  */
-export default function RegisterForm({ isAdmin = false } = {}) {
+export default function RegisterForm({ isAdmin = false }) {
 
     const [firstname, setFirstname] = useState("")
     const [name, setName] = useState("");
@@ -48,7 +45,7 @@ export default function RegisterForm({ isAdmin = false } = {}) {
 
     async function handleDelete(id) {
         try {
-            await axios.delete(`${API_URL}/users/${id}`);
+            await deleteUser(id);
             await loadUsers();
         } catch (err) {
             setToast("Error deleting user");
@@ -79,7 +76,7 @@ export default function RegisterForm({ isAdmin = false } = {}) {
             city: city,
         };
         try {
-            await axios.post(`${API_URL}/user`, userData);
+            await createUser(userData);
             setToast("Saved Successfully");
             setTimeout(() => setToast(""), 3000);
             setFirstname("");
@@ -96,8 +93,8 @@ export default function RegisterForm({ isAdmin = false } = {}) {
 
     async function loadUsers() {
         try {
-            const res = await axios.get(`${API_URL}/users`);
-            setUsers(res.data.users || []);
+            const list = await getUsers();
+            setUsers(list);
         } catch (err) {
             setUsers([]);
         }

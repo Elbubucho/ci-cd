@@ -26,8 +26,15 @@ function fillValidForm(overrides = {}) {
   cy.get("#city").type(values.city);
 }
 
-describe("RegisterForm E2E", () => {
-  beforeEach(() => {
+describe("RegisterForm E2E (online)", () => {
+  before(() => {
+    if (Cypress.env("offline")) {
+      this.skip && this.skip();
+    }
+  });
+
+  beforeEach(function () {
+    if (Cypress.env("offline")) this.skip();
     resetUsers();
   });
 

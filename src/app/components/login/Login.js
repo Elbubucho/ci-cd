@@ -1,8 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
-
-const API_PORT = process.env.REACT_APP_SERVER_PORT || 8000;
-const API_URL = `http://localhost:${API_PORT}`;
+import { login as apiLogin } from "../../api";
 
 /**
  * Page de login admin.
@@ -24,12 +21,10 @@ export default function Login({ onLogin }) {
     async function handleSubmit(e) {
         e.preventDefault();
         setError("");
-        try {
-            const response = await axios.post(`${API_URL}/login`, { email, password });
-            if (response.data && response.data.is_admin) {
-                onLogin(true);
-            }
-        } catch (err) {
+        const isAdmin = await apiLogin(email, password);
+        if (isAdmin) {
+            onLogin(true);
+        } else {
             setError("Invalid credentials");
         }
     }

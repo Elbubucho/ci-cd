@@ -126,8 +126,17 @@ jobs:
       - name: Check adminer health
         run: docker inspect --format "{{json .State.Health.Status }}" ci-cd-adminer-1 | jq '. == "healthy"'
 
-      - name: Cypress run
+      - name: Cypress run (online)
         uses: cypress-io/github-action@v6
+
+      - name: Stop backend container
+        run: docker compose stop backend
+
+      - name: Cypress run (offline)
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          env: offline=true
 
       - name: Stop services
         if: always()

@@ -1,7 +1,7 @@
 import './App.css';
-import axios from "axios";
 import RegisterForm from "./components/registerForm/RegisterForm";
 import Login from "./components/login/Login";
+import { countUsers } from "./api";
 import {useState, useEffect} from "react";
 
 
@@ -17,25 +17,14 @@ import {useState, useEffect} from "react";
  * @returns {JSX.Element} La page principale de l'application.
  */
 function App() {
-    const port = process.env.REACT_APP_SERVER_PORT || 8000;
     const [usersCount, setUsersCount] = useState(0);
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
-        async function countUsers() {
-            try {
-                const api = axios.create({
-                    baseURL: `http://localhost:${port}`,
-                });
-                const response = await api.get('/users');
-                setUsersCount(response.data.users.length);
-            } catch(error) {
-                console.error(error);
-            }
-        }
-        countUsers();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+        countUsers()
+            .then(setUsersCount)
+            .catch(() => setUsersCount(0));
+    }, []);
 
     return (
         <div className="App">
