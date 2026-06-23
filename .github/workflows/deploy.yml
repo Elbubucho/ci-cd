@@ -1,0 +1,84 @@
+name: Deploy to AWS (full stack)
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: eu-west-3
+  REGISTRY_HOST: ${{ secrets.REGISTRY_HOST }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login + push images to private registry
+        run: |
+          echo '{ "insecure-registries": ["${{ env.REGISTRY_HOST }}"] }' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login https://${{ env.REGISTRY_HOST }} \
+            -u ${{ secrets.REGISTRY_USER }} --password-stdin
+          docker build -t ${{ env.REGISTRY_HOST }}/frontend:latest -f DockerfileReact .
+          docker build -t ${{ env.REGISTRY_HOST }}/backend:latest  -f server/Dockerfile ./server
+          docker push ${{ env.REGISTRY_HOST }}/frontend:latest
+          docker push ${{ env.REGISTRY_HOST }}/backend:latest
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform apply + generate inventory
+        working-directory: ./infra
+        run: |
+          terraform init
+          terraform apply -auto-approve
+          INSTANCE_IP=$(terraform output -raw instance_ip)
+          terraform output -raw ssh_private_key > ../ansible/key.pem
+          chmod 600 ../ansible/key.pem
+          cat > ../ansible/inventory.ini <<EOF
+          [app_hosts]
+          ${INSTANCE_IP} ansible_user=ubuntu ansible_ssh_private_key_file=key.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+          EOF
+          echo "INSTANCE_IP=${INSTANCE_IP}" >> $GITHUB_ENV
+
+      - name: Install Ansible + wait SSH
+        run: |
+          sudo apt-get update && sudo apt-get install -y ansible
+          for i in {1..30}; do
+            ssh -o StrictHostKeyChecking=no -i ansible/key.pem ubuntu@${INSTANCE_IP} 'true' 2>/dev/null && break
+            echo "Waiting for SSH... ($i/30)"; sleep 10
+          done
+
+      - name: Run Ansible playbook
+        working-directory: ./ansible
+        env:
+          REGISTRY_HOST: ${{ env.REGISTRY_HOST }}
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        run: ansible-playbook -i inventory.ini playbook.yml
+
+      - name: Validate frontend + backend
+        run: |
+          for endpoint in "3000" "8000/users"; do
+            for i in {1..20}; do
+              curl -fs http://${INSTANCE_IP}:${endpoint} > /dev/null && echo "OK: $endpoint" && break
+              echo "Waiting for ${endpoint}... ($i/20)"; sleep 10
+            done
+            curl -fs http://${INSTANCE_IP}:${endpoint} > /dev/null
+          done
+          echo ""
+          echo "Frontend : http://${INSTANCE_IP}:3000"
+          echo "Backend  : http://${INSTANCE_IP}:8000"
+          echo "Adminer  : http://${INSTANCE_IP}:8080"

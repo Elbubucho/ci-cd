@@ -28,6 +28,15 @@ yarn-error.log*
 
 .env
 .env.*
+!.env.sample
 .idea/
 __pycache__/
 *.pyc
+
+# Terraform / Ansible
+**/*.pem
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/.terraform/
+**/.terraform.lock.hcl
+**/inventory.ini
