@@ -73,12 +73,25 @@
           MYSQL_USER={{ mysql_user }}
           MYSQL_DATABASE={{ mysql_database }}
 
+    - name: Configurer Docker pour accepter le registre self-signed
+      copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "insecure-registries": ["{{ registry_host }}"]
+          }
+        mode: '0644'
+
+    - name: Redémarrer Docker pour appliquer la config
+      service:
+        name: docker
+        state: restarted
+
     - name: Authentification au registre Docker privé
       command: >
         docker login {{ registry_host }}
         -u {{ registry_user }}
         -p {{ registry_password }}
-      no_log: true
 
     - name: Pull des dernières images depuis le registre
       command: docker compose pull
