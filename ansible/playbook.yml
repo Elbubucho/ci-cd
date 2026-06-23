@@ -106,13 +106,11 @@
       command: docker compose up -d
       args:
         chdir: "{{ project_dir }}"
-
-    - name: Attendre quelques secondes pour la stabilisation
-      pause:
-        seconds: 30
+      register: up_result
+      failed_when: false
 
     - name: Statut des conteneurs
-      command: docker compose ps
+      command: docker compose ps -a
       args:
         chdir: "{{ project_dir }}"
       register: compose_ps_output
@@ -121,12 +119,29 @@
       debug:
         msg: "{{ compose_ps_output.stdout_lines }}"
 
-    - name: Logs des conteneurs (50 dernières lignes)
-      command: docker compose logs --tail=50
+    - name: Logs db (200 lignes)
+      command: docker compose logs db --tail=200
       args:
         chdir: "{{ project_dir }}"
-      register: compose_logs_output
+      register: db_logs
+      failed_when: false
 
-    - name: Affichage des logs
+    - name: Affichage logs db
       debug:
-        msg: "{{ compose_logs_output.stdout_lines }}"
+        msg: "{{ db_logs.stdout_lines }}"
+
+    - name: Logs backend (200 lignes)
+      command: docker compose logs backend --tail=200
+      args:
+        chdir: "{{ project_dir }}"
+      register: backend_logs
+      failed_when: false
+
+    - name: Affichage logs backend
+      debug:
+        msg: "{{ backend_logs.stdout_lines }}"
+
+    - name: Échec si docker compose up a planté
+      fail:
+        msg: "docker compose up failed: {{ up_result.stderr }}"
+      when: up_result.rc != 0
