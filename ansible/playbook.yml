@@ -103,13 +103,13 @@
       until: pull_result.rc == 0
 
     - name: Lancement de la stack applicative
-      command: docker compose up -d --force-recreate
+      command: docker compose up -d
       args:
         chdir: "{{ project_dir }}"
-      retries: 3
-      delay: 15
-      register: up_result
-      until: up_result.rc == 0
+
+    - name: Attendre quelques secondes pour la stabilisation
+      pause:
+        seconds: 30
 
     - name: Statut des conteneurs
       command: docker compose ps
@@ -120,3 +120,13 @@
     - name: Affichage du statut
       debug:
         msg: "{{ compose_ps_output.stdout_lines }}"
+
+    - name: Logs des conteneurs (50 dernières lignes)
+      command: docker compose logs --tail=50
+      args:
+        chdir: "{{ project_dir }}"
+      register: compose_logs_output
+
+    - name: Affichage des logs
+      debug:
+        msg: "{{ compose_logs_output.stdout_lines }}"
