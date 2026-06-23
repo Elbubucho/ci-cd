@@ -97,11 +97,19 @@
       command: docker compose pull
       args:
         chdir: "{{ project_dir }}"
+      retries: 3
+      delay: 15
+      register: pull_result
+      until: pull_result.rc == 0
 
     - name: Lancement de la stack applicative
       command: docker compose up -d --force-recreate
       args:
         chdir: "{{ project_dir }}"
+      retries: 3
+      delay: 15
+      register: up_result
+      until: up_result.rc == 0
 
     - name: Statut des conteneurs
       command: docker compose ps
