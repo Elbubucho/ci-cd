@@ -51,8 +51,13 @@ jobs:
           EOF
           echo "INSTANCE_IP=${INSTANCE_IP}" >> $GITHUB_ENV
 
-      - name: Install Ansible
-        run: sudo apt-get update && sudo apt-get install -y ansible
+      - name: Install Ansible + wait SSH
+        run: |
+          sudo apt-get update && sudo apt-get install -y ansible
+          for i in {1..30}; do
+            ssh -o StrictHostKeyChecking=no -i ansible/key.pem ubuntu@${INSTANCE_IP} 'true' 2>/dev/null && break
+            echo "Waiting for SSH... ($i/30)"; sleep 10
+          done
 
       - name: Run Ansible playbook
         working-directory: ./ansible
@@ -78,12 +83,3 @@ jobs:
           echo "Frontend : http://${INSTANCE_IP}:3000"
           echo "Backend  : http://${INSTANCE_IP}:8000"
           echo "Adminer  : http://${INSTANCE_IP}:8080"
-          {
-            echo "## ✅ Déploiement réussi"
-            echo ""
-            echo "| Service | URL |"
-            echo "|---|---|"
-            echo "| Frontend | http://${INSTANCE_IP}:3000 |"
-            echo "| Backend  | http://${INSTANCE_IP}:8000 |"
-            echo "| Adminer  | http://${INSTANCE_IP}:8080 |"
-          } >> $GITHUB_STEP_SUMMARY

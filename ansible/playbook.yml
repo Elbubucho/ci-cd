@@ -2,16 +2,6 @@
 - name: Déploiement de la stack applicative
   hosts: app_hosts
   become: true
-  gather_facts: false
-
-  pre_tasks:
-    - name: Attendre que SSH soit disponible
-      wait_for_connection:
-        timeout: 300
-        delay: 5
-
-    - name: Gather facts
-      setup:
 
   vars:
     project_dir: "/home/ubuntu/app-stack"
