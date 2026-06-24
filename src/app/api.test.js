@@ -126,5 +126,21 @@ describe("api module", () => {
             await getUsersProd();
             expect(axiosProd.get).toHaveBeenCalledWith("https://ci-cd-integration-psi.vercel.app/users");
         });
+
+        it("uses the current window hostname when not localhost", async () => {
+            const originalLocation = window.location;
+            delete window.location;
+            window.location = { hostname: "15.224.101.137" };
+
+            jest.resetModules();
+            jest.doMock("axios");
+            const axiosEc2 = require("axios");
+            axiosEc2.get.mockResolvedValueOnce({ data: { users: [] } });
+            const { getUsers: getUsersEc2 } = require("./api");
+            await getUsersEc2();
+            expect(axiosEc2.get).toHaveBeenCalledWith("http://15.224.101.137:8000/users");
+
+            window.location = originalLocation;
+        });
     });
 });

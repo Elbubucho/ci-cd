@@ -51,13 +51,8 @@ jobs:
           EOF
           echo "INSTANCE_IP=${INSTANCE_IP}" >> $GITHUB_ENV
 
-      - name: Install Ansible + wait SSH
-        run: |
-          sudo apt-get update && sudo apt-get install -y ansible
-          for i in {1..30}; do
-            ssh -o StrictHostKeyChecking=no -i ansible/key.pem ubuntu@${INSTANCE_IP} 'true' 2>/dev/null && break
-            echo "Waiting for SSH... ($i/30)"; sleep 10
-          done
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
 
       - name: Run Ansible playbook
         working-directory: ./ansible

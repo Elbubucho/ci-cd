@@ -38,13 +38,13 @@ resource "tls_private_key" "app_key" {
 }
 
 resource "aws_key_pair" "app_key_pair" {
-  key_name   = "app-key-terraform-${formatdate("YYYYMMDDhhmmss", timestamp())}"
-  public_key = tls_private_key.app_key.public_key_openssh
+  key_name_prefix = "app-key-terraform-"
+  public_key      = tls_private_key.app_key.public_key_openssh
 }
 
 # Security group : ports applicatifs ouverts + SSH
 resource "aws_security_group" "app_sg" {
-  name        = "app-sg-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  name_prefix = "app-sg-"
   description = "Allow SSH, HTTP app ports"
 
   ingress {
