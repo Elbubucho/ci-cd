@@ -97,10 +97,6 @@
       command: docker compose pull
       args:
         chdir: "{{ project_dir }}"
-      retries: 3
-      delay: 15
-      register: pull_result
-      until: pull_result.rc == 0
 
     - name: Lancement de la stack applicative
       command: docker compose up -d
@@ -108,6 +104,10 @@
         chdir: "{{ project_dir }}"
       register: up_result
       failed_when: false
+
+    - name: Pause pour laisser la stack se stabiliser
+      pause:
+        seconds: 30
 
     - name: Statut des conteneurs
       command: docker compose ps -a
