@@ -78,3 +78,12 @@ jobs:
           echo "Frontend : http://${INSTANCE_IP}:3000"
           echo "Backend  : http://${INSTANCE_IP}:8000"
           echo "Adminer  : http://${INSTANCE_IP}:8080"
+          {
+            echo "## ✅ Déploiement réussi"
+            echo ""
+            echo "| Service | URL |"
+            echo "|---|---|"
+            echo "| Frontend | http://${INSTANCE_IP}:3000 |"
+            echo "| Backend  | http://${INSTANCE_IP}:8000 |"
+            echo "| Adminer  | http://${INSTANCE_IP}:8080 |"
+          } >> $GITHUB_STEP_SUMMARY

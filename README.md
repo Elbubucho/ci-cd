@@ -1,21 +1,25 @@
 # Integration Test
 
-Application full-stack (React + FastAPI + MySQL) servant de support à la mise en place d'une chaîne CI/CD complète : tests unitaires, intégration, end-to-end avec Cypress, infrastructure Docker, déploiement automatisé sur GitHub Pages (front) et Vercel (back), DB de production sur AlwaysData.
+Application full-stack (React + FastAPI + MySQL) servant de support à une chaîne CI/CD complète : tests unitaires, intégration, end-to-end avec Cypress, infrastructure Docker, et déploiement automatisé sur AWS (registre Docker privé + EC2 applicative provisionnée via Terraform/Ansible).
 
 ## Stack
 
-- **Frontend** : React 19, axios — déployé sur GitHub Pages
-- **Backend** : Python 3.9, FastAPI, uvicorn — déployé sur Vercel
-- **Base de données** : MySQL 9.7 (locale via Docker, prod sur AlwaysData)
-- **Outils** : Adminer pour explorer la DB en local
+- **Frontend** : React 19, axios
+- **Backend** : Python 3.9, FastAPI, uvicorn
+- **Base de données** : MySQL 8.4
+- **Adminer** : interface web pour la DB
+- **Registre Docker privé** : registry:2 derrière nginx (TLS + htpasswd)
+- **IaC** : Terraform (provisionning) + Ansible (configuration)
+- **CI/CD** : GitHub Actions
 
 ## Pré-requis
 
-- [Node.js](https://nodejs.org/) (version 20 ou supérieure)
-- [Docker](https://www.docker.com/) et Docker Compose (pour l'environnement complet)
+- [Node.js](https://nodejs.org/) 20+
+- [Docker](https://www.docker.com/) et Docker Compose
+- [Terraform](https://www.terraform.io/) 1.2+ et [Ansible](https://www.ansible.com/) (uniquement pour exécuter le déploiement en local)
 - npm
 
-## Installation
+## Installation locale
 
 ```bash
 git clone https://github.com/Elbubucho/ci-cd.git
@@ -23,7 +27,7 @@ cd integration-test
 npm install
 ```
 
-Créer un fichier `.env` à la racine :
+Créer un fichier `.env` à la racine
 
 ```
 MYSQL_ROOT_PASSWORD=admin
@@ -31,9 +35,9 @@ MYSQL_USER=root
 MYSQL_DATABASE=ynov_ci
 ```
 
-## Lancer l'application
+## Lancer l'application en local
 
-### Tout l'environnement avec Docker
+### Environnement complet avec Docker
 
 ```bash
 docker compose up --build
@@ -43,26 +47,26 @@ docker compose up --build
 - Backend : http://localhost:8000
 - Adminer : http://localhost:8080
 
-### Front seul (sans Docker)
+### Front seul
 
 ```bash
 npm start
 ```
 
-## Lancer les tests
+## Tests
 
-### Tests unitaires et d'intégration
+### Unitaires et d'intégration
 
 ```bash
 npm test
 ```
 
-Exécute la suite Jest et génère un rapport de couverture dans `./coverage`.
+Suite Jest avec rapport de couverture dans `./coverage`.
 
-### Tests end-to-end (Cypress)
+### End-to-end (Cypress)
 
 ```bash
-# Mode online (backend up)
+# Mode online (stack complète)
 docker compose up -d
 npx cypress open
 
@@ -72,20 +76,42 @@ docker compose stop backend
 npx cypress open --env offline=true
 ```
 
-## Générer la documentation
+## Documentation JSDoc
 
 ```bash
 npm run jsdoc
 ```
 
-La documentation est générée dans `./public/docs`.
+Générée dans `./public/docs`.
 
-## Déploiement
+## Déploiement AWS
 
-Les déploiements sont automatisés via GitHub Actions à chaque push sur `main` :
+L'architecture finale repose sur deux EC2 distinctes :
 
-- **Frontend** → GitHub Pages
-- **Backend** → Vercel
-- **Images Docker** → Docker Hub
+- Une **EC2 registre** hébergeant un registre Docker privé (nginx + TLS + htpasswd), déployée une fois et persistante.
+- Une **EC2 applicative** éphémère, recréée à chaque exécution du workflow, qui pull les images depuis le registre et lance la stack complète.
 
-La DB de production tourne sur AlwaysData. Les secrets sont gérés via GitHub Secrets et les variables d'environnement Vercel.
+Le déploiement se fait via le workflow `deploy.yml` (déclenché manuellement) :
+
+1. Build et push des images frontend/backend vers le registre Docker privé.
+2. `terraform apply` crée une nouvelle EC2 applicative.
+3. Ansible configure cette EC2 et lance la stack en pullant les images depuis le registre.
+4. Le workflow valide via `curl` que le frontend et le backend répondent, puis affiche les URLs publiques.
+
+Les variables et secrets nécessaires sont à configurer dans GitHub Secrets (identifiants AWS, identifiants du registre, credentials MySQL).
+
+## Structure du projet
+
+```
+.
+├── .github/workflows/      # Pipelines CI/CD (tests, build, deploy)
+├── ansible/                # Playbook de configuration de l'EC2 applicative
+├── infra/                  # Terraform : EC2 applicative + clé SSH + SG
+├── registry/               # Terraform + Ansible pour l'EC2 du registre Docker
+├── server/                 # Backend FastAPI (main.py, Dockerfile, requirements.txt)
+├── src/                    # Frontend React
+├── sqlfiles/               # Migrations SQL
+├── cypress/                # Tests end-to-end
+├── docker-compose.yml      # Stack de développement (build local)
+└── docker-compose.prod.yml # Stack de production (pull depuis le registre)
+```

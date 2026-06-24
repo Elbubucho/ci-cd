@@ -28,7 +28,6 @@ yarn-error.log*
 
 .env
 .env.*
-!.env.sample
 .idea/
 __pycache__/
 *.pyc
@@ -40,3 +39,7 @@ __pycache__/
 **/.terraform/
 **/.terraform.lock.hcl
 **/inventory.ini
+
+# Livrables (pas push sur GitHub)
+rendu.txt
+ARCHITECTURE.md

@@ -104,10 +104,28 @@
       args:
         chdir: "{{ project_dir }}"
 
-    - name: Démarrer la stack (depends_on healthy gère l'ordre)
-      command: docker compose up -d --wait
+    - name: Démarrer la base de données seule
+      command: docker compose up -d db
       args:
         chdir: "{{ project_dir }}"
+
+    - name: Attendre que la db soit healthy
+      command: docker compose ps --format '{% raw %}{{.Health}}{% endraw %}' db
+      args:
+        chdir: "{{ project_dir }}"
+      register: db_health
+      until: db_health.stdout == "healthy"
+      retries: 30
+      delay: 10
+
+    - name: Démarrer le reste de la stack
+      command: docker compose up -d
+      args:
+        chdir: "{{ project_dir }}"
+
+    - name: Pause pour stabilisation
+      pause:
+        seconds: 15
 
     - name: Statut des conteneurs
       command: docker compose ps -a
