@@ -41,15 +41,14 @@
         - "{{ project_dir }}/ssl"
         - "{{ project_dir }}/conf"
 
-    - name: Génération du certificat SSL auto-signé
+    - name: Génération du certificat SSL auto-signé (avec SAN)
       command: >
         openssl req -x509 -nodes -days 365
         -newkey rsa:2048
         -keyout {{ project_dir }}/ssl/registry.key
         -out {{ project_dir }}/ssl/registry.crt
         -subj "/CN={{ public_ip }}"
-      args:
-        creates: "{{ project_dir }}/ssl/registry.crt"
+        -addext "subjectAltName=IP:{{ public_ip }}"
 
     - name: Génération du mot de passe pour le registre
       htpasswd:

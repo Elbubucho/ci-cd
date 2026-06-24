@@ -26,6 +26,7 @@ jobs:
         run: |
           echo '{ "insecure-registries": ["${{ env.REGISTRY_HOST }}"] }' | sudo tee /etc/docker/daemon.json
           sudo systemctl restart docker
+          until docker info > /dev/null 2>&1; do echo "waiting docker..."; sleep 1; done
           echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login https://${{ env.REGISTRY_HOST }} \
             -u ${{ secrets.REGISTRY_USER }} --password-stdin
           docker build -t ${{ env.REGISTRY_HOST }}/frontend:latest -f DockerfileReact .
