@@ -99,6 +99,10 @@
       args:
         chdir: "{{ project_dir }}"
 
+    - name: Pause après démarrage de la db (init mysql)
+      pause:
+        seconds: 30
+
     - name: Attendre que la db soit healthy
       command: docker compose ps --format '{% raw %}{{.Health}}{% endraw %}' db
       args:
