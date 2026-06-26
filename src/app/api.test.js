@@ -116,15 +116,20 @@ describe("api module", () => {
             jest.resetModules();
         });
 
-        it("uses the Vercel URL when NODE_ENV is production", async () => {
-            process.env.NODE_ENV = "production";
+        it("uses the Vercel URL when served from GitHub Pages", async () => {
+            const originalLocation = window.location;
+            delete window.location;
+            window.location = { hostname: "elbubucho.github.io" };
+
             jest.resetModules();
             jest.doMock("axios");
-            const axiosProd = require("axios");
-            axiosProd.get.mockResolvedValueOnce({ data: { users: [] } });
-            const { getUsers: getUsersProd } = require("./api");
-            await getUsersProd();
-            expect(axiosProd.get).toHaveBeenCalledWith("https://ci-cd-integration-psi.vercel.app/users");
+            const axiosGh = require("axios");
+            axiosGh.get.mockResolvedValueOnce({ data: { users: [] } });
+            const { getUsers: getUsersGh } = require("./api");
+            await getUsersGh();
+            expect(axiosGh.get).toHaveBeenCalledWith("https://ci-cd-integration-psi.vercel.app/users");
+
+            window.location = originalLocation;
         });
 
         it("uses the current window hostname when not localhost", async () => {

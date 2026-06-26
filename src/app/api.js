@@ -1,10 +1,20 @@
 import axios from "axios";
 
-const API_URL = process.env.NODE_ENV === "production"
-    ? "https://ci-cd-integration-psi.vercel.app"
-    : (typeof window !== "undefined" && window.location.hostname !== "localhost"
-        ? `http://${window.location.hostname}:8000`
-        : `http://localhost:${process.env.REACT_APP_SERVER_PORT}`);
+function resolveApiUrl() {
+    if (typeof window === "undefined") {
+        return `http://localhost:${process.env.REACT_APP_SERVER_PORT || 8000}`;
+    }
+    const { hostname } = window.location;
+    if (hostname.endsWith("github.io")) {
+        return "https://ci-cd-integration-psi.vercel.app";
+    }
+    if (hostname === "localhost") {
+        return `http://localhost:${process.env.REACT_APP_SERVER_PORT || 8000}`;
+    }
+    return `http://${hostname}:8000`;
+}
+
+const API_URL = resolveApiUrl();
 
 /**
  * @file Wrappers axios autour des endpoints du backend FastAPI.
