@@ -2,7 +2,7 @@
   "name": "integration-test-valsala",
   "version": "0.2.0",
   "private": false,
-  "homepage": "https://Elbubucho.github.io/ci-cd/",
+  "homepage": ".",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
