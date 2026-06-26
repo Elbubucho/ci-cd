@@ -46,17 +46,10 @@ services:
       retries: 5
       start_period: 20s
   react:
-    image: react
     build:
       context: .
       dockerfile: DockerfileReact
     ports:
       - "3000:3000"
-    environment:
-      - REACT_APP_SERVER_PORT=8000
-    volumes:
-      - .:/app
-      - /app/node_modules
     depends_on:
       - backend
-    command: npm start

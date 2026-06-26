@@ -147,5 +147,20 @@ describe("api module", () => {
 
             window.location = originalLocation;
         });
+
+        it("falls back to port 8000 when REACT_APP_SERVER_PORT is not set (localhost)", async () => {
+            const originalPort = process.env.REACT_APP_SERVER_PORT;
+            delete process.env.REACT_APP_SERVER_PORT;
+
+            jest.resetModules();
+            jest.doMock("axios");
+            const axiosLocal = require("axios");
+            axiosLocal.get.mockResolvedValueOnce({ data: { users: [] } });
+            const { getUsers: getUsersLocal } = require("./api");
+            await getUsersLocal();
+            expect(axiosLocal.get).toHaveBeenCalledWith("http://localhost:8000/users");
+
+            process.env.REACT_APP_SERVER_PORT = originalPort;
+        });
     });
 });

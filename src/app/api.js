@@ -1,6 +1,7 @@
 import axios from "axios";
 
 function resolveApiUrl() {
+    /* istanbul ignore next: garde SSR, jamais atteinte sous jsdom */
     if (typeof window === "undefined") {
         return `http://localhost:${process.env.REACT_APP_SERVER_PORT || 8000}`;
     }
